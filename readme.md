@@ -21,52 +21,345 @@ Laravel is a web application framework with expressive, elegant syntax. We belie
 
 Laravel is accessible, powerful, and provides tools required for large, robust applications.
 
-## Learning Laravel
+working process
+use laravel 5.8
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+1. install laravel
+2.master the template
+3. in web.php admin route group
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 1500 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Route::group(['prefix'=>'admin','middleware'=>'auth','namespace'=>'Admin'],function(){
+ Route::get('/dashboard','DashboardController@index')->name('admin.dashboard');
+});
+ 
+that means middleare auth, namespace Admin folder,prefix admin
 
-## Laravel Sponsors
+3.create DashboardController command line
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+php artisan make:controller Admin/DashboardController
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[British Software Development](https://www.britishsoftware.co)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- [UserInsights](https://userinsights.com)
-- [Fragrantica](https://www.fragrantica.com)
-- [SOFTonSOFA](https://softonsofa.com/)
-- [User10](https://user10.com)
-- [Soumettre.fr](https://soumettre.fr/)
-- [CodeBrisk](https://codebrisk.com)
-- [1Forge](https://1forge.com)
-- [TECPRESSO](https://tecpresso.co.jp/)
-- [Runtime Converter](http://runtimeconverter.com/)
-- [WebL'Agence](https://weblagence.com/)
-- [Invoice Ninja](https://www.invoiceninja.com)
-- [iMi digital](https://www.imi-digital.de/)
-- [Earthlink](https://www.earthlink.ro/)
-- [Steadfast Collective](https://steadfastcollective.com/)
-- [We Are The Robots Inc.](https://watr.mx/)
-- [Understand.io](https://www.understand.io/)
-- [Abdel Elrafa](https://abdelelrafa.com)
-- [Hyper Host](https://hyper.host)
+in DashboardController create index method reaturn view page.
 
-## Contributing
+scecond 
+4. after login redirect admin/dashboard so change in auth/login.blade.php set route
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+   protected $redirectTo = '/admin/dashboard';
+5. single admin so of resistation route . in 
 
-## Security Vulnerabilities
+4th
+6. in wep.php create route resource 
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+ Route::resource('/slider','SliderController');
+7. create resource SliderController in command line
+php artisan make:controller SliderController -r
 
-## License
+show route list commmand line 
 
-The Laravel framework is open-source software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+php artisan route:list
+
+in SliderController use slider model
+use App\Slider;
+then return view
+
+public function index()
+    {
+        $sliders=Slider::all();
+        return view('admin.slider.index',compact('sliders'));
+    }
+8. create view page admin/slider/index.blade.php 
+
+make table and use @foreach() @endforeach()
+  <tbody>
+   @foreach($sliders as $key=>$slider)
+   <tr>
+                          <td>
+                            {{$key+1}}
+                          </td>
+                          <td>
+                           {{$slider->title}}
+                          </td>
+</tr>
+@endforeach
+
+9. in header.blade.php create lougout function set logout route 
+<li>
+                    <a href="{{ route('logout') }}" onclick="event.preventDefault();document.getElementById('logout-form').submit();">
+                        <i class="material-icons">exit_to_app</i>
+                        Logout
+                    </a>
+                    <form id="logout-form" method="POST" action="{{ route('logout') }}" style="display: none">
+                        @csrf
+                    </form>
+                </li>
+that means when submit work logout-form and action route logout . 
+
+10. in dashboard show slider and active 
+
+<ul class="nav">
+           <li class="{{ Request::is('admin/dashboard*') ? 'active': '' }}">
+            <a class="nav-link" href="{{route('admin.dashboard')}}">
+              <i class="material-icons">dashboard</i>
+              <p>Dashboard</p>
+            </a>
+          </li>
+that means if else condition request admin/dashboard is active show 
+
+and set route siderbar  route('admin.dashboard');
+
+11. use datatable.net use 
+
+
+5th add new slider
+
+12 in sliderController.php  create method
+
+ return view('admin.slider.create');
+
+13 create admin/slider/create.blade.php in form method=post, action={{route(slider.store)}} enctype=multipart/form-data.
+
+ <form method="POST" action="{{ route('slider.store') }}" enctype="multipart/form-data">
+  @csrf
+
+14. in sliderController.php work store method save image and store all data
+
+  public function store(Request $request)
+    {
+        $this->validate($request,[
+            'title' => 'required',
+            'sub_title' => 'required',
+            'image' => 'required|mimes:jpeg,jpg,bmp,png',
+        ]);
+        $image = $request->file('image');
+        
+        $slug = str_slug($request->title);
+
+        if (isset($image))
+            // that check korbe je $image variable set ase ki na.
+        {
+            $currentDate = Carbon::now()->toDateString();
+            $imagename = $slug .'-'. $currentDate .'-'. uniqid() .'.'. $image->getClientOriginalExtension();
+            //imagename sludg.date.unicid.name extensiton name
+            if (!file_exists('uploads/slider'))
+                //check file set ase ki na.
+            {
+                mkdir('uploads/slider', 0777 , true);
+                // akti driktori create korbe & vlue dite hobe 0777
+            }
+            $image->move('uploads/slider',$imagename);
+            // jodi file create theake ta hole move hobe uploads file a
+        }else {
+            $imagename = 'dafault.png';
+        }
+
+        $slider = new Slider();
+        //variable->mysql database name=$request->form name
+        $slider->title = $request->title;
+        $slider->sub_title = $request->sub_title;
+        $slider->image = $imagename;
+        $slider->save();
+        return redirect()->route('slider.index')->with('successMsg','Slider Successfully Saved');
+    }
+15. When input filed not fill error massge show . and insert show successfull massage
+
+6th edit slider 
+
+16. edit slider route that  slide.edit route pass id
+<td><a href="{{route('slider.edit',$slider->id)}}" class="btn btn-info btn-sm">
+<i class="material-icons">mode_edit</i> </a> </td>
+
+17. in edit method find id data and return 
+
+ $sliders=Slider::find($id);
+ return view('admin.slider.edit',compact('sliders'));
+
+18 in admin/slider/edit set value in form that show data.
+
+value="{{ $slider->title }}"
+
+
+18 SliderController in update method uddate data so find data set route in edit.blade.php and method put
+
+  <form method="POST" action="{{ route('slider.update',$sliders->id) }}" enctype="multipart/form-data">
+ @csrf
+ @method('PUT')
+
+
+  <button type="button" class="btn btn-danger btn-sm" onclick="if(confirm('Are you sure? You want to delete this?')){
+event.preventDefault();
+document.getElementById('delete-form-{{ $slider->id }}').submit();
+}else {
+                         event.preventDefault();
+ }"><i class="material-icons">delete</i></button>
+
+19. show the massage create admin/include/msg 
+@if ($errors->any())
+    @foreach ($errors->all() as $error)
+        <div class="alert alert-danger">
+            <button type="button" aria-hidden="true" class="close" onclick="this.parentElement.style.display='none'">×</button>
+            <span>
+            <b> Danger - </b> {{ $error }}
+			</span>
+        </div>
+    @endforeach
+@endif
+
+@if(session('successMsg'))
+    <div class="alert alert-success">
+        <button type="button" aria-hidden="true" class="close" onclick="this.parentElement.style.display='none'">×</button>
+        <span>
+		<b> Success - </b> {{ session('successMsg') }}
+		</span>
+    </div>
+@endif
+
+and where show the massgage @include('admin.include.msg) 
+use 
+7th 
+18. delete the the slide find id and unlinck the path. in SliderController 
+public function destroy($id)
+    {
+          $slider = Slider::find($id);
+        if (file_exists('uploads/slider/'.$slider->image))
+        {
+            unlink('uploads/slider/'.$slider->image);
+            //this unlink patah a
+        }
+        $slider->delete();
+        return redirect()->back()->with('successMsg','Slider Successfully Deleted');
+    }
+
+9th slide show frontend 
+
+19. create route in wep.php
+Route::get('/','HomeController@index)->name('welcome');
+20. in HomeController index method
+
+$sliders=Slider::all();
+return view('welcome',compact('sliders'));
+
+21. in welcome.blade.php show the slide in main.css slide show
+bt laravel foreach dont work main.css so css class cut and paste the welcome.blade.php
+
+ <style>
+        @foreach($sliders as $key=>$slider)
+        
+            .owl-carousel .owl-wrapper, .owl-carousel .owl-item:nth-child({{ $key + 1 }}) .item
+            {
+                background: url({{ asset('uploads/slider/'.$slider->image) }});
+                background-size: cover;
+            }
+        @endforeach
+    </style>
+here this code. 
+and foreach for title and sub_title that dynamic show
+
+10th category crud
+
+11th relation ship category item 
+22. many to one realationship one category many item
+create two model and migration and filed data .
+php artisan make:model Category -m
+php artisan make:model item -m
+
+23.category many relaton in App/Categoy.php
+ public function items()
+    {
+        return $this->hasMany('App\item');
+    } 
+24.item inverse relation in App/item.php
+public function category()
+    {
+        return $this->belongsTo('App\Category');
+    }
+25. check relation 
+php artisan tiker
+App\Category::find(1);
+App\Category::find(1)->items
+
+10-15th crud item bt new learn relation and select category 
+
+  <select class="form-control" name="category">
+                                              @foreach($categories as $category )
+                                              <option value="{{$category->id}}">{{$category->name}}</option>
+                                              @endforeach
+                                            </select>
+it option select category show 
+when item seclect work value 
+ 
+15th show the forn page category and item 
+
+26. in HomeController create index()
+
+public function index()
+    {
+        $sliders=Slider::all();
+        $categories=Category::all();
+        $items=item::all();
+        return view('welcome',compact('sliders','categories','items'));
+    }
+that get all and pass welcome page.
+
+26. in welcome.php  
+
+<li class="filter" data-filter="all">All</li>
+                                    @foreach($categories as $category)
+                                        <li class="filter" data-filter="#{{ $category->id }}">{{ $category->name }} <span class="badge">{{ $category->items->count() }}</span></li>
+                                    @endforeach
+that is data-filter="#{{ $category->id }}" link and next 
+
+
+                        @foreach($items as $item)
+                            <li class="item" id="{{ $item->category->id }}">
+                                <!--data-filter="#{{ $category->id }}" it send id and  get id="{{ $item->category->id }}" it-->
+                                <a href="#">
+                                    <img src="{{ asset('uploads/item/'.$item->image) }}" class="img-responsive" alt="Item" style="height: 300px; width: 369px;" >
+
+                                    <div class="menu-desc text-center">
+                                            <span>
+                                                <h3>{{ $item->name }}</h3>
+                                                {{ $item->description }}
+                                            </span>
+                                    </div>
+                                </a>
+                                <h2 class="white">${{ $item->price }}</h2>
+                            </li>
+                        @endforeach
+
+
+16th reservation system
+
+27. use piker .use piker css and js and last use script code
+use input class .form_datetime 
+28. create ReservationController and model and database
+ php artisan make:controller ReservationController
+ php artisan make:model Reservation -m
+
+filled the database and stor reservationControler
+
+22th at the final clean the welcome page and 
+in Admin\DashboardController 
+$categoryCount = Category::count();
+        $itemCount = item::count();
+        $sliderCount = Slider::count();
+        $reservations = Reservation::where('status',false)->get();
+        
+        return view('admin.home.home',compact('categoryCount','itemCount','sliderCount','reservations'));
+
+in admin\home\home 
+
+<h3 class="card-title">{{ $categoryCount }}/{{ $itemCount }}
+
+that cout the the category
+
+at last paginate the page 
+
+in controller 
+use Illuminate\Pagination\LengthAwarePaginator;
+clear all 
+$items=Item::paginate(15);
+
+in index page
+
+  <tr> {{ $items->links()}}</tr>
+
+thant link tha page
